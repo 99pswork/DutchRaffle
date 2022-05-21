@@ -50,6 +50,10 @@ contract DutchRaffle is Ownable {
         endTime[raffleId] = block.timestamp + durationHours*3600 ;
     }
 
+    function updateTotalDuration(uint256 raffleId, uint256 durationHours) external onlyOwner {
+        endTime[raffleId] = startTime[raffleId] + durationHours*3600 ;
+    }
+
     function getCurrentPrice(uint256 raffleId) public view returns(uint256) {
         require(activeStatus[raffleId], "Raffle is inactive");
         require(!completedStatus[raffleId],"Raffle Already Completed!");
