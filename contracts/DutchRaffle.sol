@@ -14,6 +14,8 @@ contract DutchRaffle is Ownable {
     address public DUTCH_RAFFLE;
     bool public isInitialized = false;
 
+    uint256 precisionFactor  = 10**8;
+
     IERC20 public rewardTokenAddress;
 
     constructor() {
@@ -50,6 +52,10 @@ contract DutchRaffle is Ownable {
         endTime[raffleId] = block.timestamp + durationHours*3600 ;
     }
 
+    function updateTokenAddress(IERC20 _address) external onlyOwner {
+        rewardTokenAddress = _address;
+    }
+
     function updateTotalDuration(uint256 raffleId, uint256 durationHours) external onlyOwner {
         endTime[raffleId] = startTime[raffleId] + durationHours*3600 ;
     }
@@ -62,8 +68,8 @@ contract DutchRaffle is Ownable {
             return endPrice[raffleId];
         }
         else{
-            uint256 pricePerTime = (startPrice[raffleId] - endPrice[raffleId])/(endTime[raffleId] - startTime[raffleId]);
-            uint256 priceChange = pricePerTime*(block.timestamp - startTime[raffleId]);
+            uint256 pricePerTime = (startPrice[raffleId] - endPrice[raffleId])*precisionFactor/(endTime[raffleId] - startTime[raffleId]);
+            uint256 priceChange = pricePerTime*(block.timestamp - startTime[raffleId])/precisionFactor;
             return startPrice[raffleId] - priceChange;
         }
     }
@@ -92,5 +98,10 @@ contract DutchRaffle is Ownable {
 
     function getRaffleDetails(uint256 raffleId) external view returns (uint256, uint256, uint256, uint256, uint256, uint256){
         return (maxSupply[raffleId], currentSupply[raffleId], startPrice[raffleId], endPrice[raffleId], startTime[raffleId], endTime[raffleId]);
+    }
+
+    function withdraw() external onlyOwner {
+        uint256 balance = rewardTokenAddress.balanceOf(address(this));
+        rewardTokenAddress.transfer(msg.sender, balance);
     }
 }
