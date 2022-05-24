@@ -141,7 +141,6 @@ contract DutchRaffleContract is Ownable {
         userTemp.usedTokens += amount;
         userDetails[msg.sender].push(userTemp);
         getDutchRaffle[raffleId] = dutchRaffle;
-
     }
 
     function getRaffleAddressList(uint256 raffleId) external view returns (address[] memory) {
