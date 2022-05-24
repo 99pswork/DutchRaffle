@@ -59,6 +59,7 @@ contract DutchRaffleContract is Ownable {
         DutchRaffle memory dutchRaffle = getDutchRaffle[raffleId];
         require(dutchRaffle.completedStatus==false,"Raffle Already Completed!");
         require(dutchRaffle.activeStatus==false,"Raffle Not Active");
+        dutchRaffle.raffleId = raffleId;
         dutchRaffle.activeStatus = true;
         dutchRaffle.completedStatus = false;
         dutchRaffle.maxSupply = totalSupply;
