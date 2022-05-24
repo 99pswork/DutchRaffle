@@ -152,7 +152,7 @@ contract DutchRaffleContract is Ownable {
         return getDutchRaffle[raffleId];
     }
 
-    function getAllActiveRaffle() view external returns (DutchRaffle[] memory) {
+    function getAllActiveRaffle() view public returns (DutchRaffle[] memory) {
         DutchRaffle[] memory dutchRaffle = new DutchRaffle[](activeRaffleList.length);
         for(uint256 i=0;i<activeRaffleList.length;i++){
             dutchRaffle[i] = getDutchRaffle[activeRaffleList[i]];
@@ -160,16 +160,20 @@ contract DutchRaffleContract is Ownable {
         return dutchRaffle;
     }
 
-    function getAllUserDetails(address _address) view external returns (User[] memory) {
+    function getAllUserDetails(address _address) view public returns (User[] memory) {
         return userDetails[_address];
     }
 
-    function getAllCompletedRaffle() view external returns (DutchRaffle[] memory) {
+    function getAllCompletedRaffle() view public returns (DutchRaffle[] memory) {
         DutchRaffle[] memory dutchRaffle = new DutchRaffle[](completedRaffleList.length);
         for(uint256 i=0; i<completedRaffleList.length; i++){
             dutchRaffle[i] = getDutchRaffle[completedRaffleList[i]];
         }
         return dutchRaffle;
+    }
+
+    function getAllData(address _address) view external returns (DutchRaffle[] memory, User[] memory, DutchRaffle[] memory){
+        return (getAllActiveRaffle(), getAllUserDetails(_address), getAllCompletedRaffle());
     }
 
     function withdraw() external onlyOwner {
