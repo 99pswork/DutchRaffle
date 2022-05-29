@@ -5,24 +5,26 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "hardhat/console.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/access/AccessControl.sol";
 
-contract DutchRaffleContract is Ownable {
+contract DutchRaffleContract is Ownable, ReentrancyGuard, AccessControl {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
     address public DUTCH_RAFFLE;
+    bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
     bool public isInitialized = false;
 
     uint256 precisionFactor  = 10**8;
 
     IERC20 public rewardTokenAddress;
 
-    constructor() {
+    constructor() ReentrancyGuard() {
         DUTCH_RAFFLE = msg.sender;
     }
 
-    function initialize(IERC20 _rewardTokenAddress) external {
+    function initialize(IERC20 _rewardTokenAddress) external nonReentrant {
         require(!isInitialized, "Already initialized");
         require(msg.sender == DUTCH_RAFFLE, "Only Owner");
         isInitialized = true;
@@ -55,7 +57,8 @@ contract DutchRaffleContract is Ownable {
     uint256[] public completedRaffleList;
     uint256[] public activeRaffleList;
 
-    function startRaffle(uint256 raffleId, uint256 totalSupply, uint256 sPrice, uint256 ePrice, uint256 durationHours) external onlyOwner {
+    function startRaffle(uint256 raffleId, uint256 totalSupply, uint256 sPrice, uint256 ePrice, uint256 durationHours) external {
+        require(hasRole(ADMIN_ROLE, msg.sender), "Caller is not a admin");
         DutchRaffle memory dutchRaffle = getDutchRaffle[raffleId];
         require(dutchRaffle.completedStatus==false,"Raffle Already Completed!");
         require(dutchRaffle.activeStatus==false,"Raffle Not Active");
@@ -76,7 +79,8 @@ contract DutchRaffleContract is Ownable {
         rewardTokenAddress = _address;
     }
 
-    function updateTotalDuration(uint256 raffleId, uint256 durationHours) external onlyOwner {
+    function updateTotalDuration(uint256 raffleId, uint256 durationHours) external {
+        require(hasRole(ADMIN_ROLE, msg.sender), "Caller is not a admin");
         DutchRaffle storage dutchRaffle = getDutchRaffle[raffleId];
         require(dutchRaffle.completedStatus==false, "Raffle has completed!");
         dutchRaffle.endTime = dutchRaffle.startTime + durationHours*3600 ;
@@ -114,7 +118,8 @@ contract DutchRaffleContract is Ownable {
         }
     }
 
-    function endRaffle(uint256 raffleId) onlyOwner external {
+    function endRaffle(uint256 raffleId) external {
+        require(hasRole(ADMIN_ROLE, msg.sender), "Caller is not a admin");
         DutchRaffle storage dutchRaffle = getDutchRaffle[raffleId];
         require(dutchRaffle.completedStatus==false, "Raffle has already completed!");
         dutchRaffle.activeStatus = false;
