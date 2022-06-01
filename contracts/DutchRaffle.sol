@@ -22,6 +22,7 @@ contract DutchRaffleContract is Ownable, ReentrancyGuard, AccessControl {
 
     constructor() ReentrancyGuard() {
         DUTCH_RAFFLE = msg.sender;
+        _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
     }
 
     function initialize(IERC20 _rewardTokenAddress) external nonReentrant {
