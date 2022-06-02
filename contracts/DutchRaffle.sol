@@ -8,6 +8,11 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 
+interface IAlphaSharkRewards {
+    function updateTotalLockTokens(uint256 _amount, address _address) external;
+    function availableTokens(address _address) external view returns (uint256);
+}
+
 contract DutchRaffleContract is Ownable, ReentrancyGuard, AccessControl {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
@@ -18,18 +23,18 @@ contract DutchRaffleContract is Ownable, ReentrancyGuard, AccessControl {
 
     uint256 precisionFactor  = 10**8;
 
-    IERC20 public rewardTokenAddress;
+    address public AlphaSharkRewards;
 
     constructor() ReentrancyGuard() {
         DUTCH_RAFFLE = msg.sender;
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
     }
 
-    function initialize(IERC20 _rewardTokenAddress) external nonReentrant {
+    function initialize(address _rewardsContractAddress) external nonReentrant {
         require(!isInitialized, "Already initialized");
         require(msg.sender == DUTCH_RAFFLE, "Only Owner");
         isInitialized = true;
-        rewardTokenAddress = _rewardTokenAddress;
+        AlphaSharkRewards = _rewardsContractAddress;
         transferOwnership(msg.sender);
     }
 
@@ -76,8 +81,8 @@ contract DutchRaffleContract is Ownable, ReentrancyGuard, AccessControl {
         activeRaffleList.push(raffleId);
     }
 
-    function updateTokenAddress(IERC20 _address) external onlyOwner {
-        rewardTokenAddress = _address;
+    function updateRewardContractAddress(address _address) external onlyOwner {
+        AlphaSharkRewards = _address;
     }
 
     function updateTotalDuration(uint256 raffleId, uint256 durationHours) external {
@@ -138,8 +143,8 @@ contract DutchRaffleContract is Ownable, ReentrancyGuard, AccessControl {
         require(dutchRaffle.currentSupply.add(1) <= dutchRaffle.maxSupply, "Total Limit Reached");
         uint256 currentPrice = getCurrentPrice(raffleId);
         require(amount >= currentPrice,"Amount is less than price");
-        require(rewardTokenAddress.balanceOf(msg.sender) >= amount.mul(10**18), "Insufficient Amount");
-        rewardTokenAddress.transferFrom(msg.sender, address(this), amount.mul(10**18));
+        require(IAlphaSharkRewards(AlphaSharkRewards).availableTokens(msg.sender) >= amount.mul(10**18), "Insufficient Balance");
+        IAlphaSharkRewards(AlphaSharkRewards).updateTotalLockTokens(amount.mul(10**18), msg.sender);
         dutchRaffle.raffleAddressList.push(msg.sender);
         dutchRaffle.currentSupply += 1;
         User memory userTemp;
@@ -182,8 +187,4 @@ contract DutchRaffleContract is Ownable, ReentrancyGuard, AccessControl {
         return (getAllActiveRaffle(), getAllUserDetails(_address), getAllCompletedRaffle());
     }
 
-    function withdraw() external onlyOwner {
-        uint256 balance = rewardTokenAddress.balanceOf(address(this));
-        rewardTokenAddress.transfer(msg.sender, balance);
-    }
 }
