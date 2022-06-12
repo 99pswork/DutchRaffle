@@ -124,7 +124,7 @@ contract DutchRaffleContract is Ownable, ReentrancyGuard, AccessControl {
         }
     }
 
-    function endRaffle(uint256 raffleId) external {
+    function endRaffle(uint256 raffleId) public {
         require(hasRole(ADMIN_ROLE, msg.sender), "Caller is not a admin");
         DutchRaffle storage dutchRaffle = getDutchRaffle[raffleId];
         require(dutchRaffle.completedStatus==false, "Raffle has already completed!");
@@ -135,7 +135,18 @@ contract DutchRaffleContract is Ownable, ReentrancyGuard, AccessControl {
         getDutchRaffle[raffleId] = dutchRaffle;
     }
 
-    function buyRaffle(uint256 raffleId, uint256 amount) external {
+    function updateRaffleStatus() external {
+        require(hasRole(ADMIN_ROLE, msg.sender), "Caller is not a admin");
+         for(uint256 i=0; i<activeRaffleList.length; i++)
+        {
+            DutchRaffle memory _dutchRaffle = getDutchRaffle[activeRaffleList[i]];
+            if(_dutchRaffle.endTime < block.timestamp){
+                endRaffle(activeRaffleList[i]);
+            }
+        }
+    }
+
+    function buyRaffle(uint256 raffleId, uint256 amount) external nonReentrant {
         DutchRaffle storage dutchRaffle = getDutchRaffle[raffleId];
         require(dutchRaffle.activeStatus, "Raffle is inactive");
         require(!dutchRaffle.completedStatus,"Raffle Already Completed!");
