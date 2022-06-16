@@ -147,7 +147,8 @@ contract DutchRaffleContract is Ownable, ReentrancyGuard, AccessControl {
         }
     }
 
-    function buyRaffle(uint256 raffleId, uint256 amount) external nonReentrant {
+    function buyRaffle(uint256 raffleId, uint256 amount, address _address) external nonReentrant {
+        require(hasRole(ADMIN_ROLE, msg.sender), "Caller is not a admin");
         DutchRaffle storage dutchRaffle = getDutchRaffle[raffleId];
         require(dutchRaffle.activeStatus, "Raffle is inactive");
         require(!dutchRaffle.completedStatus,"Raffle Already Completed!");
@@ -155,15 +156,15 @@ contract DutchRaffleContract is Ownable, ReentrancyGuard, AccessControl {
         require(dutchRaffle.currentSupply.add(1) <= dutchRaffle.maxSupply, "Total Limit Reached");
         uint256 currentPrice = getCurrentPrice(raffleId);
         require(amount >= currentPrice,"Amount is less than price");
-        require(IAlphaSharkRewards(AlphaSharkRewards).availableTokens(msg.sender) >= amount.mul(10**18), "Insufficient Balance");
-        IAlphaSharkRewards(AlphaSharkRewards).updateTotalLockTokens(amount.mul(10**18), msg.sender);
-        dutchRaffle.raffleAddressList.push(msg.sender);
+        require(IAlphaSharkRewards(AlphaSharkRewards).availableTokens(_address) >= amount.mul(10**18), "Insufficient Balance");
+        IAlphaSharkRewards(AlphaSharkRewards).updateTotalLockTokens(amount.mul(10**18), _address);
+        dutchRaffle.raffleAddressList.push(_address);
         dutchRaffle.currentSupply += 1;
         User memory userTemp;
-        userTemp.ownerAddress = msg.sender;
+        userTemp.ownerAddress = _address;
         userTemp.raffleId = raffleId;
         userTemp.usedTokens += amount;
-        userDetails[msg.sender].push(userTemp);
+        userDetails[_address].push(userTemp);
         getDutchRaffle[raffleId] = dutchRaffle;
     }
 
@@ -198,5 +199,13 @@ contract DutchRaffleContract is Ownable, ReentrancyGuard, AccessControl {
     function getAllData(address _address) view external returns (DutchRaffle[] memory, User[] memory, DutchRaffle[] memory){
         return (getAllActiveRaffle(), getAllUserDetails(_address), getAllCompletedRaffle());
     }
+
+    function getActiveRaffleList() view external returns (uint256[] memory){
+        return activeRaffleList;
+    }
+
+    function getCompletedRaffleList() view external returns (uint256[] memory){
+        return completedRaffleList;
+    } 
 
 }
