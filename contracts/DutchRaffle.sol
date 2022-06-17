@@ -63,7 +63,7 @@ contract DutchRaffleContract is Ownable, ReentrancyGuard, AccessControl {
     uint256[] public completedRaffleList;
     uint256[] public activeRaffleList;
 
-    function startRaffle(uint256 raffleId, uint256 totalSupply, uint256 sPrice, uint256 ePrice, uint256 durationHours) external {
+    function startRaffle(uint256 raffleId, uint256 totalSupply, uint256 sPrice, uint256 ePrice, uint256 durationHours, uint256 startTime) external {
         require(hasRole(ADMIN_ROLE, msg.sender), "Caller is not a admin");
         DutchRaffle memory dutchRaffle = getDutchRaffle[raffleId];
         require(dutchRaffle.completedStatus==false,"Raffle Already Completed!");
@@ -75,8 +75,8 @@ contract DutchRaffleContract is Ownable, ReentrancyGuard, AccessControl {
         dutchRaffle.currentSupply = 0;
         dutchRaffle.startPrice = sPrice;
         dutchRaffle.endPrice = ePrice;
-        dutchRaffle.startTime = block.timestamp;
-        dutchRaffle.endTime = block.timestamp + durationHours*3600;
+        dutchRaffle.startTime = startTime;
+        dutchRaffle.endTime = startTime + durationHours*3600;
         getDutchRaffle[raffleId] = dutchRaffle;
         activeRaffleList.push(raffleId);
     }
@@ -99,6 +99,9 @@ contract DutchRaffleContract is Ownable, ReentrancyGuard, AccessControl {
         if(dutchRaffle.endTime < block.timestamp)
         {
             return dutchRaffle.endPrice;
+        }
+        else if(dutchRaffle.startTime > block.timestamp){
+            return dutchRaffle.startPrice;
         }
         else{
             uint256 pricePerTime = (dutchRaffle.startPrice - dutchRaffle.endPrice)*precisionFactor/(dutchRaffle.endTime - dutchRaffle.startTime);
@@ -152,6 +155,7 @@ contract DutchRaffleContract is Ownable, ReentrancyGuard, AccessControl {
         DutchRaffle storage dutchRaffle = getDutchRaffle[raffleId];
         require(dutchRaffle.activeStatus, "Raffle is inactive");
         require(!dutchRaffle.completedStatus,"Raffle Already Completed!");
+        require(dutchRaffle.startTime <= block.timestamp, "Dutch auction has not started yet");
         require(block.timestamp <= dutchRaffle.endTime, "Raffle has ended");
         require(dutchRaffle.currentSupply.add(1) <= dutchRaffle.maxSupply, "Total Limit Reached");
         uint256 currentPrice = getCurrentPrice(raffleId);
