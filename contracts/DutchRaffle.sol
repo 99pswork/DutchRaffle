@@ -145,7 +145,10 @@ contract DutchRaffleContract is Ownable, ReentrancyGuard, AccessControl {
             DutchRaffle memory _dutchRaffle = getDutchRaffle[activeRaffleList[i]];
             if(_dutchRaffle.endTime < block.timestamp){
                 endRaffle(activeRaffleList[i]);
-                i-=1;
+                if(i!=0)
+                {
+                    i-=1;
+                }
             }
         }
     }
